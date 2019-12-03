@@ -15,8 +15,6 @@ FROM alpine:${ALPINE_VERSION}
 
 ARG KUBECTL_VERSION="v1.15.6"
 ARG BUILD_DATE=""
-ARG BUILD_VERSION="latest"
-ARG VCS_REF=""
 
 # see: http://label-schema.org/rc1/
 LABEL org.label-schema.build-date="${BUILD_DATE}" \
@@ -25,10 +23,10 @@ LABEL org.label-schema.build-date="${BUILD_DATE}" \
       org.label-schema.name="cjmach/kubessl" \
       org.label-schema.schema-version="1.0" \
       org.label-schema.url="https://github.com/cjmach/kubessl" \
-      org.label-schema.vcs-ref="${VCS_REF}" \
+      org.label-schema.vcs-ref="${SOURCE_COMMIT}" \
       org.label-schema.vcs-url="https://github.com/cjmach/kubessl" \
       org.label-schema.vendor="cjmach" \
-      org.label-schema.version="${BUILD_VERSION}"
+      org.label-schema.version="${SOURCE_BRANCH}"
 
 COPY --from=build /go/cfssl/bin /usr/local/bin
 COPY scripts/* /usr/local/bin/
