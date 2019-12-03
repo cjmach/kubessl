@@ -1,0 +1,85 @@
+#!/bin/sh
+
+set -e
+
+usage() {
+    cat <<-EOF
+This script combines Cloudflare's cfssl CLI tool with kubectl to:
+1. Generate an intermediate CA certificate;
+2. Store the resulting certificate as a kubernetes TLS secret.
+
+Usage: $0 [-c CACERT] [-f] [-h] [-i CONFIG] [-k CAKEY] [-n NAMESPACE] [-o PREFIX] [-p PROFILE] [-r CSR] [-s SECRET]
+
+Options:
+    -c  Path to the CA certificate file.
+    -f  Force the creation of the kubernetes secret (default is 'no').
+        If this option is present and the secret already exists, it will be deleted first.
+    -h  Prints this message and exits.
+    -i  Path to the cfssl configuration file.
+    -k  Path to the CA private key file.
+    -n  Kubernetes namespace where the resulting secret will be stored.
+    -o  Name prefix for the resulting certificate files (default is 'cert').
+        By default, it generates 3 files named: cert.pem, cert-key.pem and cert.csr
+    -r  Path to the Certificate Signing Request (CSR) file.
+    -s  Kubernetes secret name.
+EOF
+}
+
+ca_cert='ca.key'
+ca_key='ca.pem'
+config_file='intca-config.json'
+csr_file='intca-csr.json'
+output_file='intca'
+k8s_secret='intca-tls'
+k8s_namespace='default'
+force='no'
+
+while getopts ':c:fhi:k:n:o:r:s:' options; do
+    case "${options}" in
+        c)
+            ca_cert="${OPTARG}"
+            ;;
+        f)
+            force='yes'
+            ;;
+        h)
+            usage
+            exit 0
+            ;;
+        i)
+            config_file="${OPTARG}"
+            ;;
+        k)
+            ca_key="${OPTARG}"
+            ;;
+        n)
+            k8s_namespace="${OPTARG}"
+            ;;
+        o)
+            output_file="${OPTARG}"
+            ;;
+        r)
+            csr_file="${OPTARG}"
+            ;;
+        s)
+            k8s_secret="${OPTARG}"
+            ;;
+        :)
+            echo "[ERROR] -${OPTARG} requires an argument." 1>&2
+            usage
+            exit 1
+            ;;
+        *)
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+# generate intermediate CA
+cfssl gencert -ca ${ca_cert} -ca-key ${ca_key} -config ${config_file} "${csr_file}" | cfssljson -bare "${output_file}"
+
+if [ "${force}" = 'yes' ]; then
+    kubectl -n ${k8s_namespace} delete secret ${k8s_secret} || true
+fi
+kubectl -n ${k8s_namespace} create secret tls ${k8s_secret} --cert="${output_file}.pem" --key="${output_file}-key.pem"

@@ -1,0 +1,56 @@
+#!/bin/sh
+
+set -e
+
+usage() {
+    cat <<-EOF
+Generates a default kubeconfig file, specially tailored for accessing a kubernetes cluster inside a pod.
+
+Usage: $0 [-a URL] [-b TOKEN] [-c CACERT] [-h]
+
+Options:
+    -a  The URL for the apiserver (default is 'https://kubernetes.default')
+    -b  Path to the file containing the bearer token (default is '/var/run/secrets/kubernetes.io/serviceaccount/token').
+    -c  Path to the CA certificate file (default is '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt').
+    -h  Prints this message and exits.
+EOF
+}
+
+cacert_file='/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
+token_file='/var/run/secrets/kubernetes.io/serviceaccount/token'
+apiserver='https://kubernetes.default'
+
+while getopts ':a:b:c:h' options; do
+    case "${options}" in
+        a)
+            apiserver="${OPTARG}"
+            ;;
+        b)
+            token_file="${OPTARG}"
+            ;;
+        c)
+            cacert_file="${OPTARG}"
+            ;;
+        h)
+            usage
+            exit 0
+            ;;
+        :)
+            echo "[ERROR] -${OPTARG} requires an argument." 1>&2
+            usage
+            exit 1
+            ;;
+        *)
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+bearer_token="$(cat "${token_file}")"
+cacert="$(base64 "${cacert_file}" | tr -d '\n')"
+
+kubectl config set-cluster k8s-cluster --server="${apiserver}" --certificate-authority="${cacert_file}" --embed-certs=true
+kubectl config set-credentials k8s-user --token="${bearer_token}"
+kubectl config set-context k8s-context --cluster=k8s-cluster --user=k8s-user
+kubectl config use-context k8s-context
