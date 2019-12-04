@@ -1,10 +1,19 @@
 # kubessl
-An alpine based docker image that includes Cloudflare's cfssl and Kubernetes' kubectl CLI tools. 
+An Alpine based docker image that includes Cloudflare's cfssl and Kubernetes' kubectl CLI tools. 
 It also includes a few shell scripts that ease the task of:
 1. Creating a PKI (Root CA, Intermediate CA and client/server/peer certificates);
 2. Store the generated certificates as kubernetes TLS secrets.
 
 # Documentation
+
+To run the included scripts, you must provide a valid kubeconfig file, otherwise the scripts will fail to store the certificates as kubernetes secrets with the following error message:
+```
+The connection to the server localhost:8080 was refused - did you specify the right host or port?
+```
+If running inside a pod, you just have to run the script `genkubecfg`
+to generate a kubeconfig file with the service account credentials.
+
+If running locally, you can, for instance, mount your kubeconfig file inside the container. The local examples follow this approach.
 
 ## gencertca
 ```bash
@@ -25,16 +34,22 @@ Options:
     -r  Path to the Certificate Signing Request (CSR) file.
     -s  Kubernetes secret name.
 ```
-### gencertca command line example
+### gencertca command line example (local)
 ```bash
 # Generates a Root CA certificate based on the CSR file found on example 
 # directory and stores it in the kube-system namespace as a secret named 
 # 'ca-tls'.
-$ docker run -it --rm -v $(pwd)/example:/mnt:Z --user $(id -u):$(id -g) cjmach/kubessl gencertca -r ca-csr.json -n kube-system -s ca-tls
+$ docker run -it --rm --user $(id -u):$(id -g) \
+    -v $(pwd)/example:/mnt:Z \
+    -v ${HOME}/.kube/config:/home/$(whoami)/.kube/config:Z \
+    cjmach/kubessl gencertca \
+        -r ca-csr.json \
+        -n kube-system -s ca-tls
 ```
 
 ## gencertintca
 ```bash
+$ gencertintca -h
 This script combines Cloudflare's cfssl CLI tool with kubectl to:
 1. Generate an intermediate CA certificate;
 2. Store the resulting certificate as a kubernetes TLS secret.
@@ -54,13 +69,19 @@ Options:
     -r  Path to the Certificate Signing Request (CSR) file.
     -s  Kubernetes secret name.
 ```
-### gencertintca command line example
+### gencertintca command line example (local)
 ```bash
 # Generates an Intermediate CA certificate based on files found on the 
 # example directory and stores it in the kube-system namespace as a secret 
 # named 'intca-tls'. It also requires a Root CA certificate to sign the
 # intermediate CA.
-$ docker run -it --rm -v $(pwd)/example:/mnt:Z --user $(id -u):$(id -g) cjmach/kubessl gencertintca -c ca.pem -k ca-key.pem -i intca-config.json -r intca-csr.json -n kube-system -s intca-tls
+$ docker run -it --rm --user $(id -u):$(id -g) \
+    -v $(pwd)/example:/mnt:Z \
+    -v ${HOME}/.kube/config:/home/$(whoami)/.kube/config:Z 
+    cjmach/kubessl gencertintca \
+        -c ca.pem -k ca-key.pem \
+        -i intca-config.json -r intca-csr.json \
+        -n kube-system -s intca-tls
 ```
 
 ## gencert
@@ -87,13 +108,33 @@ Options:
     -r  Path to the Certificate Signing Request (CSR) file.
     -s  Kubernetes secret name.
 ```
-### gencert command line example
+### gencert command line example (local)
 ```bash
 # Generates a server certificate based on files found on the example 
 # directory and stores it in the kube-system namespace as a secret 
 # named 'server-tls'. It also requires an Intermediate CA certificate 
 # to sign the server certificate.
-$ docker run -it --rm -v $(pwd)/example:/mnt:Z --user $(id -u):$(id -g) cjmach/kubessl gencert -c intca.pem -i ca-config.json -k intca-key.pem -o server -p server -r server-csr.json -n kube-system -s server-tls
+$ docker run -it --rm --user $(id -u):$(id -g) \
+    -v $(pwd)/example:/mnt:Z \
+    -v ${HOME}/.kube/config:/home/$(whoami)/.kube/config:Z \
+    cjmach/kubessl gencert \
+        -c intca.pem -i ca-config.json \
+        -k intca-key.pem -o server \
+        -p server -r server-csr.json \
+        -n kube-system -s server-tls
+```
+## genkubecfg
+```bash
+$ genkubecfg -h
+Generates a default kubeconfig file, specially tailored for accessing a kubernetes cluster inside a pod.
+
+Usage: genkubecfg [-a URL] [-b TOKEN] [-c CACERT] [-h]
+
+Options:
+    -a  The URL for the apiserver (default is 'https://kubernetes.default')
+    -b  Path to the file containing the bearer token (default is '/var/run/secrets/kubernetes.io/serviceaccount/token').
+    -c  Path to the CA certificate file (default is '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt').
+    -h  Prints this message and exits.
 ```
 
 # License
