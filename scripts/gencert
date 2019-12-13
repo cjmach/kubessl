@@ -98,8 +98,9 @@ done
 
 # generate certificate
 cfssl gencert -ca ${ca_cert} -ca-key ${ca_key} -config ${config_file} -profile ${profile} ${csr_file} | cfssljson -bare ${output_file}
+cat ${output_file}.pem ${ca_cert} > ${output_file}-chain.pem
 
 if [ "${force}" = 'yes' ]; then
     kubectl -n ${k8s_namespace} delete secret ${k8s_secret} > /dev/null 2>&1 || true
 fi
-kubectl -n ${k8s_namespace} create secret tls ${k8s_secret} --cert="${output_file}.pem" --key="${output_file}-key.pem"
+kubectl -n ${k8s_namespace} create secret tls ${k8s_secret} --cert="${output_file}-chain.pem" --key="${output_file}-key.pem"
