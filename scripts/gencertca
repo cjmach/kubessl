@@ -80,4 +80,4 @@ cfssl gencert -initca "${csr_file}" | cfssljson -bare "${output_file}"
 if [ "${force}" = 'yes' ]; then
     kubectl -n ${k8s_namespace} delete secret ${k8s_secret} > /dev/null 2>&1 || true
 fi
-kubectl -n ${k8s_namespace} create secret tls ${k8s_secret} --cert="${output_file}.pem" --key="${output_file}-key.pem"
+kubectl -n ${k8s_namespace} create secret generic ${k8s_secret} --from-file=tls.crt="${output_file}.pem" --from-file=tls.key="${output_file}-key.pem"
