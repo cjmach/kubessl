@@ -96,4 +96,11 @@ cfssl gencert -ca ${ca_cert} -ca-key ${ca_key} -config ${config_file} "${csr_fil
 if [ "${force}" = 'yes' ]; then
     kubectl -n ${k8s_namespace} delete secret ${k8s_secret} || true
 fi
-kubectl -n ${k8s_namespace} create secret generic ${k8s_secret} --from-file=tls.crt="${output_file}.pem" --from-file=tls.key="${output_file}-key.pem"
+
+# create bundle
+cat "${output_file}-key.pem" "${output_file}.pem" > "${output_file}-bundle.pem"
+# store as k8s secret
+kubectl -n ${k8s_namespace} create secret generic ${k8s_secret} \
+    --from-file=tls.crt="${output_file}.pem" \
+    --from-file=tls.key="${output_file}-key.pem" \
+    --from-file=tls.bundle="${output_file}-bundle.pem"
