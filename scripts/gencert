@@ -25,19 +25,19 @@ This script combines Cloudflare's cfssl CLI tool with kubectl to:
 Usage: $0 [-c CACERT] [-f] [-h] [-i CONFIG] [-k CAKEY] [-n NAMESPACE] [-o PREFIX] [-p PROFILE] [-r CSR] [-s SECRET]
 
 Options:
-    -c  Path to the CA certificate file.
+    -c  Path to the CA certificate file (default is 'int-ca.pem').
     -f  Force the creation of the kubernetes secret (default is 'no').
         If this option is present and the secret already exists, it will be deleted first.
     -h  Prints this message and exits.
-    -i  Path to the cfssl configuration file.
-    -k  Path to the CA private key file.
-    -n  Kubernetes namespace where the resulting secret will be stored.
+    -i  Path to the cfssl configuration file (default is 'ca-config.json').
+    -k  Path to the CA private key file (default is 'int-ca.key').
+    -n  Kubernetes namespace where the resulting secret will be stored (default is 'default').
     -o  Name prefix for the resulting certificate files (default is 'cert').
         By default, it generates 3 files named: cert.pem, cert-key.pem and cert.csr
-    -p  Profile to use to issue the certificate.
+    -p  Profile to use to issue the certificate (default is 'server').
         The supported profiles are specified in the cfssl configuration file.
-    -r  Path to the Certificate Signing Request (CSR) file.
-    -s  Kubernetes secret name.
+    -r  Path to the Certificate Signing Request (CSR) file (default is 'server-csr.json').
+    -s  Kubernetes secret name (default is 'server-tls').
 EOF
 }
 
@@ -47,7 +47,7 @@ config_file='ca-config.json'
 csr_file='server-csr.json'
 output_file='cert'
 profile='server'
-k8s_secret='server-cert'
+k8s_secret='server-tls'
 k8s_namespace='default'
 force='no'
 

@@ -28,11 +28,11 @@ Options:
     -f  Force the creation of the kubernetes secret (default is 'no').
         If this option is present and the secret already exists, it will be deleted first.
     -h  Prints this message and exits.
-    -n  Kubernetes namespace where the resulting secret will be stored.
+    -n  Kubernetes namespace where the resulting secret will be stored (default is 'default').
     -o  Name prefix for the resulting certificate files (default is 'ca').
-        By default, it generates 3 files named: ca.pem, ca-key.pem and ca.csr
-    -r  Path to the Certificate Signing Request (CSR) file.
-    -s  Kubernetes secret name.
+        By default, it generates 3 files named: ca.pem, ca-key.pem and ca.csr.
+    -r  Path to the Certificate Signing Request (CSR) file (default is 'ca-csr.json').
+    -s  Kubernetes secret name (default is 'ca-tls').
 EOF
 }
 
@@ -80,4 +80,8 @@ cfssl gencert -initca "${csr_file}" | cfssljson -bare "${output_file}"
 if [ "${force}" = 'yes' ]; then
     kubectl -n ${k8s_namespace} delete secret ${k8s_secret} > /dev/null 2>&1 || true
 fi
-kubectl -n ${k8s_namespace} create secret generic ${k8s_secret} --from-file=tls.crt="${output_file}.pem" --from-file=tls.key="${output_file}-key.pem"
+# creates a generic secret (instead of a TLS secret) to allow to delete 
+# the private key without interfering with kubernetes validations.
+kubectl -n ${k8s_namespace} create secret generic ${k8s_secret} \
+    --from-file=tls.crt="${output_file}.pem" \
+    --from-file=tls.key="${output_file}-key.pem"
