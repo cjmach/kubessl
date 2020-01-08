@@ -28,11 +28,11 @@ Options:
     -f  Force the creation of the kubernetes secret (default is 'no').
         If this option is present and the secret already exists, it will be deleted first.
     -h  Prints this message and exits.
-    -n  Kubernetes namespace where the resulting secret will be stored.
+    -n  Kubernetes namespace where the resulting secret will be stored (default is 'default').
     -o  Name prefix for the resulting certificate files (default is 'ca').
-        By default, it generates 3 files named: ca.pem, ca-key.pem and ca.csr
-    -r  Path to the Certificate Signing Request (CSR) file.
-    -s  Kubernetes secret name.
+        By default, it generates 3 files named: ca.pem, ca-key.pem and ca.csr.
+    -r  Path to the Certificate Signing Request (CSR) file (default is 'ca-csr.json').
+    -s  Kubernetes secret name (default is 'ca-tls').
 ```
 ### gencertca command line example (local)
 ```bash
@@ -52,22 +52,23 @@ $ docker run -it --rm --user $(id -u):$(id -g) \
 $ gencertintca -h
 This script combines Cloudflare's cfssl CLI tool with kubectl to:
 1. Generate an intermediate CA certificate;
-2. Store the resulting certificate as a kubernetes TLS secret.
+2. Store the resulting certificate as a kubernetes secret.
 
-Usage: gencertintca [-c CACERT] [-f] [-h] [-i CONFIG] [-k CAKEY] [-n NAMESPACE] [-o PREFIX] [-p PROFILE] [-r CSR] [-s SECRET]
+Usage: gencertintca [-c CACERT] [-f] [-h] [-i CONFIG] [-k CAKEY] [-l] [-n NAMESPACE] [-o PREFIX] [-p PROFILE] [-r CSR] [-s SECRET]
 
 Options:
-    -c  Path to the CA certificate file.
+    -c  Path to the CA certificate file (default is 'ca.pem').
     -f  Force the creation of the kubernetes secret (default is 'no').
         If this option is present and the secret already exists, it will be deleted first.
     -h  Prints this message and exits.
-    -i  Path to the cfssl configuration file.
-    -k  Path to the CA private key file.
-    -n  Kubernetes namespace where the resulting secret will be stored.
-    -o  Name prefix for the resulting certificate files (default is 'cert').
-        By default, it generates 3 files named: cert.pem, cert-key.pem and cert.csr
-    -r  Path to the Certificate Signing Request (CSR) file.
-    -s  Kubernetes secret name.
+    -i  Path to the cfssl configuration file (default is 'intca-config.json').
+    -k  Path to the CA private key file (default is 'ca.key').
+    -l  Chain the root and intermediate CA certificates.
+    -n  Kubernetes namespace where the resulting secret will be stored (default is 'default').
+    -o  Name prefix for the resulting certificate files (default is 'intca').
+        By default, it generates 3 files named: intca.pem, intca-key.pem and intca.csr
+    -r  Path to the Certificate Signing Request (CSR) file (default is 'intca-csr.json').
+    -s  Kubernetes secret name (default is 'intca-tls').
 ```
 ### gencertintca command line example (local)
 ```bash
@@ -94,19 +95,19 @@ This script combines Cloudflare's cfssl CLI tool with kubectl to:
 Usage: gencert [-c CACERT] [-f] [-h] [-i CONFIG] [-k CAKEY] [-n NAMESPACE] [-o PREFIX] [-p PROFILE] [-r CSR] [-s SECRET]
 
 Options:
-    -c  Path to the CA certificate file.
+    -c  Path to the CA certificate file (default is 'int-ca.pem').
     -f  Force the creation of the kubernetes secret (default is 'no').
         If this option is present and the secret already exists, it will be deleted first.
     -h  Prints this message and exits.
-    -i  Path to the cfssl configuration file.
-    -k  Path to the CA private key file.
-    -n  Kubernetes namespace where the resulting secret will be stored.
+    -i  Path to the cfssl configuration file (default is 'ca-config.json').
+    -k  Path to the CA private key file (default is 'int-ca.key').
+    -n  Kubernetes namespace where the resulting secret will be stored (default is 'default').
     -o  Name prefix for the resulting certificate files (default is 'cert').
         By default, it generates 3 files named: cert.pem, cert-key.pem and cert.csr
-    -p  Profile to use to issue the certificate.
+    -p  Profile to use to issue the certificate (default is 'server').
         The supported profiles are specified in the cfssl configuration file.
-    -r  Path to the Certificate Signing Request (CSR) file.
-    -s  Kubernetes secret name.
+    -r  Path to the Certificate Signing Request (CSR) file (default is 'server-csr.json').
+    -s  Kubernetes secret name (default is 'server-tls').
 ```
 ### gencert command line example (local)
 ```bash

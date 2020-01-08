@@ -22,7 +22,7 @@ This script combines Cloudflare's cfssl CLI tool with kubectl to:
 1. Generate an intermediate CA certificate;
 2. Store the resulting certificate as a kubernetes secret.
 
-Usage: $0 [-c CACERT] [-f] [-h] [-i CONFIG] [-k CAKEY] [-n NAMESPACE] [-o PREFIX] [-p PROFILE] [-r CSR] [-s SECRET]
+Usage: $0 [-c CACERT] [-f] [-h] [-i CONFIG] [-k CAKEY] [-l] [-n NAMESPACE] [-o PREFIX] [-p PROFILE] [-r CSR] [-s SECRET]
 
 Options:
     -c  Path to the CA certificate file (default is 'ca.pem').
@@ -31,6 +31,7 @@ Options:
     -h  Prints this message and exits.
     -i  Path to the cfssl configuration file (default is 'intca-config.json').
     -k  Path to the CA private key file (default is 'ca.key').
+    -l  Chain the root and intermediate CA certificates.
     -n  Kubernetes namespace where the resulting secret will be stored (default is 'default').
     -o  Name prefix for the resulting certificate files (default is 'intca').
         By default, it generates 3 files named: intca.pem, intca-key.pem and intca.csr
@@ -47,8 +48,9 @@ output_file='intca'
 k8s_secret='intca-tls'
 k8s_namespace='default'
 force='no'
+chain='no'
 
-while getopts ':c:fhi:k:n:o:r:s:' options; do
+while getopts ':c:fhi:kl:n:o:r:s:' options; do
     case "${options}" in
         c)
             ca_cert="${OPTARG}"
@@ -65,6 +67,9 @@ while getopts ':c:fhi:k:n:o:r:s:' options; do
             ;;
         k)
             ca_key="${OPTARG}"
+            ;;
+        l)
+            chain='yes'
             ;;
         n)
             k8s_namespace="${OPTARG}"
@@ -92,7 +97,10 @@ done
 
 # generate intermediate CA
 cfssl gencert -ca "${ca_cert}" -ca-key "${ca_key}" -config "${config_file}" "${csr_file}" | cfssljson -bare "${output_file}"
-cat "${output_file}.pem" "${ca_cert}" > "${output_file}-chain.pem"
+if [ "${chain}" = 'yes' ]; then
+    cat "${output_file}.pem" "${ca_cert}" > "${output_file}-chain.pem"
+    output_file="${output-file}-chain"
+fi
 
 if [ "${force}" = 'yes' ]; then
     kubectl -n ${k8s_namespace} delete secret ${k8s_secret} || true
@@ -101,5 +109,5 @@ fi
 # the private key without interfering with kubernetes validations.
 kubectl -n ${k8s_namespace} create secret generic ${k8s_secret} \
     --from-file=ca.crt="${ca_cert}" \
-    --from-file=tls.crt="${output_file}-chain.pem" \
+    --from-file=tls.crt="${output_file}.pem" \
     --from-file=tls.key="${output_file}-key.pem"
