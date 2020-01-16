@@ -50,7 +50,7 @@ k8s_namespace='default'
 force='no'
 chain='no'
 
-while getopts ':c:fhi:kl:n:o:r:s:' options; do
+while getopts 'c:fhi:k:ln:o:r:s:' options; do
     case "${options}" in
         c)
             ca_cert="${OPTARG}"
@@ -94,6 +94,17 @@ while getopts ':c:fhi:kl:n:o:r:s:' options; do
             ;;
     esac
 done
+
+echo "[INFO] $0 command-line arguments:"
+echo "ca_cert       = ${ca_cert}"
+echo "ca_key        = ${ca_key}"
+echo "chain         = ${chain}"
+echo "config_file   = ${config_file}"
+echo "csr_file      = ${csr_file}"
+echo "force         = ${force}"
+echo "k8s_namespace = ${k8s_namespace}"
+echo "k8s_secret    = ${k8s_secret}"
+echo "output_file   = ${output_file}"
 
 # generate intermediate CA
 cfssl gencert -ca "${ca_cert}" -ca-key "${ca_key}" -config "${config_file}" "${csr_file}" | cfssljson -bare "${output_file}"

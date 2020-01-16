@@ -51,7 +51,7 @@ k8s_secret='server-tls'
 k8s_namespace='default'
 force='no'
 
-while getopts ':c:fhi:k:n:o:p:r:s:' options; do
+while getopts 'c:fhi:k:n:o:p:r:s:' options; do
     case "${options}" in
         c)
             ca_cert="${OPTARG}"
@@ -96,8 +96,19 @@ while getopts ':c:fhi:k:n:o:p:r:s:' options; do
     esac
 done
 
+echo "[INFO] $0 command-line arguments:"
+echo "ca_cert       = ${ca_cert}"
+echo "ca_key        = ${ca_key}"
+echo "config_file   = ${config_file}"
+echo "csr_file      = ${csr_file}"
+echo "force         = ${force}"
+echo "k8s_namespace = ${k8s_namespace}"
+echo "k8s_secret    = ${k8s_secret}"
+echo "output_file   = ${output_file}"
+echo "profile       = ${profile}"
+
 # generate certificate
-cfssl gencert -ca ${ca_cert} -ca-key ${ca_key} -config ${config_file} -profile ${profile} ${csr_file} | cfssljson -bare ${output_file}
+cfssl gencert -ca "${ca_cert}" -ca-key "${ca_key}" -config "${config_file}" -profile "${profile}" "${csr_file}" | cfssljson -bare "${output_file}"
 
 if [ "${force}" = 'yes' ]; then
     kubectl -n ${k8s_namespace} delete secret ${k8s_secret} > /dev/null 2>&1 || true

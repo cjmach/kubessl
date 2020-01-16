@@ -42,7 +42,7 @@ k8s_secret='ca-tls'
 k8s_namespace='default'
 force='no'
 
-while getopts ':c:fhn:o:r:s:' options; do
+while getopts 'c:fhn:o:r:s:' options; do
     case "${options}" in
         f)
             force='yes'
@@ -74,6 +74,14 @@ while getopts ':c:fhn:o:r:s:' options; do
             ;;
     esac
 done
+
+echo "[INFO] $0 command-line arguments:"
+echo "config_file   = ${config_file}"
+echo "csr_file      = ${csr_file}"
+echo "force         = ${force}"
+echo "k8s_namespace = ${k8s_namespace}"
+echo "k8s_secret    = ${k8s_secret}"
+echo "output_file   = ${output_file}"
 
 cfssl gencert -initca "${csr_file}" | cfssljson -bare "${output_file}"
 
